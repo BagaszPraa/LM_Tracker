@@ -2,7 +2,6 @@ import cv2
 
 # Initialize the tracker
 tracker = cv2.TrackerCSRT_create()
-
 # Open the video file or capture from a camera
 video = cv2.VideoCapture('/home/bagas/Downloads/video.mp4')
 
