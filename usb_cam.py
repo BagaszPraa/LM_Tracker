@@ -1,67 +1,41 @@
 import cv2
-
-# Initialize the tracker
-tracker = cv2.TrackerCSRT_create()
-
-# Open the USB camera (usually index 0 for the first connected camera)
+tracker = cv2.TrackerCSRT.create()
 video = cv2.VideoCapture(2)
-
-# Check if the camera opened successfully
-if not video.isOpened():
-    print("Could not open video device")
-    exit()
-
-# Set the resolution to 640x480
 video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-# Read the first frame from the camera
-ok, frame = video.read()
-if not ok:
-    print('Cannot read video frame')
-    exit()
-
-# Select the bounding box on the first frame
-bbox = cv2.selectROI(frame, False)
-
-# Initialize the tracker with the first frame and bounding box
-ok = tracker.init(frame, bbox)
-
+initialized = False
+bbox = None
 while True:
-    # Read a new frame
     ok, frame = video.read()
-    if not ok:
-        break
-
-    # Update the tracker
-    ok, bbox = tracker.update(frame)
-
-    # Draw the bounding box and print the center coordinates
-    if ok:
-        # Tracking success
-        p1 = (int(bbox[0]), int(bbox[1]))
-        p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-        cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
-
-        # Calculate the center of the bounding box
-        center_x = int(bbox[0] + bbox[2] / 2)
-        center_y = int(bbox[1] + bbox[3] / 2)
-
-        # Print the center coordinates
-        print(f"Center of bounding box: ({center_x}, {center_y})")
-
-        # Optionally, draw the center point on the frame
-        cv2.circle(frame, (center_x, center_y), 5, (0, 255, 0), -1)
-    else:
-        # Tracking failure
-        cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
-
-    # Display the result
     cv2.imshow("Tracking", frame)
-
-    # Exit if ESC is pressed
+    if not initialized:
+        key = cv2.waitKey(1)  # Wait indefinitely until a key is pressed
+        if key == ord('s'):
+            bbox = cv2.selectROI("Tracking", frame, fromCenter=True, showCrosshair=True)
+            if bbox[2] == 0 or bbox[3] == 0:
+                print("ROI selection cancelled")
+                break
+            tracker.init(frame, bbox)
+            initialized = True
+        elif key == 27:  # ESC key pressed, exit
+            break
+    else:
+        ok, bbox = tracker.update(frame)
+        if ok:
+            p1 = (int(bbox[0]), int(bbox[1]))
+            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+            cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
+            center_x = int(bbox[0] + bbox[2] / 2)
+            center_y = int(bbox[1] + bbox[3] / 2)
+            print(f"Center of bounding box: ({center_x}, {center_y})")
+            cv2.circle(frame, (center_x, center_y), 5, (0, 255, 0), -1)
+            cv2.line(frame, (center_x, 0), (center_x, frame.shape[0]), (0, 255, 0), 2)  # Vertical line
+            cv2.line(frame, (0, center_y), (frame.shape[1], center_y), (0, 255, 0), 2)  # Horizontal line
+        else:
+            # break
+            cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+    cv2.imshow("Tracking", frame)
     if cv2.waitKey(1) & 0xFF == 27:
         break
-
 video.release()
-cv2.destroy
+cv2.destroyAllWindows()
