@@ -2,7 +2,7 @@ import cv2
 tracker = cv2.TrackerCSRT.create()
 rtsp_url = "rtsp://localhost:8554/tes"
 videosumber= "/home/bagas/Downloads/video1.mp4"
-usbcam= 2
+usbcam= 0
 video = cv2.VideoCapture(usbcam)
 video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
