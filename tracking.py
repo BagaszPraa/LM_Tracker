@@ -22,20 +22,6 @@ def select_roi(event, x, y, flags, param):
     elif event == cv2.EVENT_LBUTTONUP:
         selecting = False
         roi = (x - w // 2, y - h // 2, w, h)   
-# def select_roi(event, x, y, flags, param): #Variable ROI selector
-#     global roi, selecting, start_point, end_point
-#     if event == cv2.EVENT_LBUTTONDOWN:
-#         selecting = True
-#         start_point = (x, y)
-#         end_point = (x, y)
-#     elif event == cv2.EVENT_MOUSEMOVE:
-#         if selecting:
-#             end_point = (x, y)
-#     elif event == cv2.EVENT_LBUTTONUP:
-#         selecting = False
-#         end_point = (x, y)
-#         # roi = (x, y, 100, 100)
-#         roi = (start_point[0], start_point[1], end_point[0] - start_point[0], end_point[1] - start_point[1])
 while True:
     cv2.setMouseCallback("Frame", select_roi)
     ret, frame = cap.read()

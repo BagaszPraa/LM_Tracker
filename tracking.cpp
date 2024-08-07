@@ -1,78 +1,93 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/tracking.hpp>
+#include <iostream>
+#include <chrono>
 
+// Variabel global untuk menyimpan koordinat ROI
+cv::Rect2d roi;
+bool selecting = false;
+bool initialized = false;
+cv::Rect2d roipick;
+int fixed_width = 100;
+int fixed_height = 100;
+cv::Ptr<cv::Tracker> tracker = cv::TrackerCSRT::create();
+int frame_count = 0;
+double fps = 0.0;
+auto start_time = std::chrono::steady_clock::now();
+
+// Callback fungsi mouse untuk memilih ROI
+void select_roi(int event, int x, int y, int, void*) {
+    if (event == cv::EVENT_LBUTTONDOWN) {
+        selecting = true;
+    }
+    else if (event == cv::EVENT_MOUSEMOVE && selecting) {
+        roipick = cv::Rect2d(x - fixed_width / 2, y - fixed_height / 2, fixed_width, fixed_height);
+    }
+    else if (event == cv::EVENT_LBUTTONUP) {
+        selecting = false;
+        roi = cv::Rect2d(x - fixed_width / 2, y - fixed_height / 2, fixed_width, fixed_height);
+    }
+}
 int main() {
-    // Create a CSRT tracker
-    cv::Ptr<cv::TrackerCSRT> tracker = cv::TrackerCSRT::create();
-
-    // Open the video capture device (index 2)
-    cv::VideoCapture video(2);
-    if (!video.isOpened()) {
-        std::cerr << "Error: Could not open video device." << std::endl;
+    cv::VideoCapture cap(0);
+    if (!cap.isOpened()) {
+        std::cerr << "Error: Could not open camera." << std::endl;
         return -1;
     }
-
-    // Set the resolution to 640x480
-    video.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-    video.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-
-    // Variable to hold the ROI
-    cv::Rect2d bbox;
-    bool initialized = false;
-
+    cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+    cv::namedWindow("Frame");
+    cv::setMouseCallback("Frame", select_roi);
+    cv::Mat frame;
     while (true) {
-        cv::Mat frame;
-        bool ok = video.read(frame);
-        if (!ok) {
-            std::cerr << "Error: Could not read frame from video." << std::endl;
+        cap >> frame;
+        if (frame.empty()) {
             break;
         }
-
-        // Show the frame
-        cv::imshow("Tracking", frame);
-
-        if (!initialized) {
-            // Wait for user input
-            char key = static_cast<char>(cv::waitKey(1));
-            if (key == 's') {
-                // Let the user select the ROI
-                bbox = cv::selectROI("Tracking", frame, true, false);
-                if (bbox.width == 0 || bbox.height == 0) {
-                    std::cout << "ROI selection cancelled" << std::endl;
-                    break;
-                }
-                // Initialize the tracker with the selected ROI
-                tracker->init(frame, bbox);
-                initialized = true;
-            } else if (key == 27) { // ESC key
-                break;
-            }
-        } else {
-            // Update the tracker
-            ok = tracker->update(frame, bbox);
+        frame_count++;
+        auto current_time = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = current_time - start_time;
+        if (elapsed_seconds.count() > 1.0) {
+            fps = frame_count / elapsed_seconds.count();
+            frame_count = 0;
+            start_time = current_time;
+        }
+        if (selecting) {
+            cv::rectangle(frame, roipick, cv::Scalar(255, 0, 0), 2);
+        }
+        if (!roi.empty() && !initialized) {
+            tracker->init(frame, roi);
+            initialized = true;
+        }
+        if (initialized) {
+            cv::Rect bbox;
+            bool ok = tracker->update(frame, bbox);
             if (ok) {
-                // Tracking success
-                cv::rectangle(frame, bbox, cv::Scalar(255, 0, 0), 2, 1);
-                cv::Point2f center(bbox.x + bbox.width / 2, bbox.y + bbox.height / 2);
-                std::cout << "Center of bounding box: (" << center.x << ", " << center.y << ")" << std::endl;
-                cv::circle(frame, center, 5, cv::Scalar(0, 255, 0), -1);
-                cv::line(frame, cv::Point(center.x, 0), cv::Point(center.x, frame.rows), cv::Scalar(0, 255, 0), 1);
-                cv::line(frame, cv::Point(0, center.y), cv::Point(frame.cols, center.y), cv::Scalar(0, 255, 0), 1);
+                cv::rectangle(frame, bbox, cv::Scalar(0, 255, 0), 2, 1);
+                int center_x = static_cast<int>(bbox.x + bbox.width / 2);
+                int center_y = static_cast<int>(bbox.y + bbox.height / 2);
+                std::cout << "FPS " << fps << " Target: (" << center_x << ", " << center_y << ")" << std::endl;
+                cv::circle(frame, cv::Point(center_x, center_y), 5, cv::Scalar(0, 0, 255), -1);
+                cv::line(frame, cv::Point(center_x, 0), cv::Point(center_x, frame.rows), cv::Scalar(0, 0, 255), 2);  // Vertical line
+                cv::line(frame, cv::Point(0, center_y), cv::Point(frame.cols, center_y), cv::Scalar(0, 0, 255), 2);  // Horizontal line
             } else {
-                // Tracking failure
-                cv::putText(frame, "Tracking failure detected", cv::Point(100, 80), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
+                initialized = false;
+                roi = cv::Rect();
+                std::cout << "FPS " << fps << " Target: Missing" << std::endl;
+                cv::putText(frame, "Tracking gagal", cv::Point(100, 80), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
             }
         }
-
-        cv::imshow("Tracking", frame);
-
-        // Exit if ESC is pressed
-        if (cv::waitKey(1) == 27) {
+        // cv::imshow("Frame", frame);
+        int key = cv::waitKey(1) & 0xFF;
+        if (key == 27) {  // Tekan ESC untuk keluar
             break;
+        } else if (key == 'r') {  // Tekan 'r' untuk reset ROI
+            initialized = false;
+            roi = cv::Rect2d();
+            selecting = false;
         }
     }
-
-    video.release();
+    cap.release();
     cv::destroyAllWindows();
     return 0;
 }
