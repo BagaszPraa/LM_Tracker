@@ -7,7 +7,6 @@ usbcam = 2
 video = cv2.VideoCapture(usbcam)
 video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-video.set(cv2.CAP_PROP_FPS, 60)
 initialized = False
 fps = 0
 frame_count = 0
@@ -24,8 +23,8 @@ while True:
     if not initialized:
         key = cv2.waitKey(1)  # Wait indefinitely until a key is pressed
         while not initialized:
-            # bbox = cv2.selectROI("Tracking", frame, fromCenter=True, showCrosshair=True)
-            bbox = (320,240,50,50)
+            bbox = cv2.selectROI("Tracking", frame, fromCenter=True, showCrosshair=True)
+            # bbox = (320,240,100,100)
             if bbox[2] == 0 or bbox[3] == 0:
                 print("ROI selection cancelled")
                 break
@@ -45,6 +44,7 @@ while True:
             cv2.line(frame, (0, center_y), (frame.shape[1], center_y), (0, 0, 255), 2)  # Horizontal line
         else:
             cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+            print(f"FPS {fps:.2f} Missing Target")
     if cv2.waitKey(1) & 0xFF == 27:
         break
     cv2.imshow("Tracking", frame)
