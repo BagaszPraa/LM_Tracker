@@ -6,4 +6,5 @@
 ## Compile cpp
 ```shell
 g++ -o tracking tracking.cpp `pkg-config --cflags --libs opencv4`
+g++ -o rtsp_stream rtsp_stream.cpp `pkg-config --cflags --libs gstreamer-1.0 gstreamer-rtsp-server-1.0`
 ```
