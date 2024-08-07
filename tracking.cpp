@@ -4,10 +4,10 @@
 #include <chrono>
 
 // Variabel global untuk menyimpan koordinat ROI
-cv::Rect2d roi;
+cv::Rect roi;
 bool selecting = false;
 bool initialized = false;
-cv::Rect2d roipick;
+cv::Rect roipick;
 int fixed_width = 100;
 int fixed_height = 100;
 cv::Ptr<cv::Tracker> tracker = cv::TrackerCSRT::create();
@@ -21,11 +21,11 @@ void select_roi(int event, int x, int y, int, void*) {
         selecting = true;
     }
     else if (event == cv::EVENT_MOUSEMOVE && selecting) {
-        roipick = cv::Rect2d(x - fixed_width / 2, y - fixed_height / 2, fixed_width, fixed_height);
+        roipick = cv::Rect(x - fixed_width / 2, y - fixed_height / 2, fixed_width, fixed_height);
     }
     else if (event == cv::EVENT_LBUTTONUP) {
         selecting = false;
-        roi = cv::Rect2d(x - fixed_width / 2, y - fixed_height / 2, fixed_width, fixed_height);
+        roi = cv::Rect(x - fixed_width / 2, y - fixed_height / 2, fixed_width, fixed_height);
     }
 }
 int main() {
@@ -77,13 +77,13 @@ int main() {
                 cv::putText(frame, "Tracking gagal", cv::Point(100, 80), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
             }
         }
-        // cv::imshow("Frame", frame);
+        cv::imshow("Frame", frame);
         int key = cv::waitKey(1) & 0xFF;
         if (key == 27) {  // Tekan ESC untuk keluar
             break;
         } else if (key == 'r') {  // Tekan 'r' untuk reset ROI
             initialized = false;
-            roi = cv::Rect2d();
+            roi = cv::Rect();
             selecting = false;
         }
     }
