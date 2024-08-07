@@ -9,3 +9,8 @@
 g++ -o tracking tracking.cpp `pkg-config --cflags --libs opencv4`
 g++ -o rtsp_stream rtsp_stream.cpp `pkg-config --cflags --libs gstreamer-1.0 gstreamer-rtsp-server-1.0`
 ```
+
+## Dependencies
+```shell
+sudo apt-get update && sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstrtspserver-1.0-dev
+```
