@@ -4,17 +4,20 @@
 
 class RTSPServer {
 public:
-    RTSPServer() {
+    RTSPServer(const char* device) {
         server = gst_rtsp_server_new();
         gst_rtsp_server_set_service(server, "5000");
 
         GstRTSPMountPoints *mounts = gst_rtsp_server_get_mount_points(server);
         GstRTSPMediaFactory *factory = gst_rtsp_media_factory_new();
 
-        gst_rtsp_media_factory_set_launch(factory,
-            "( v4l2src ! video/x-raw,format=YUY2,width=640,height=480,framerate=30/1 ! videoconvert ! video/x-raw,format=I420 ! "
+        gchar *launch_string = g_strdup_printf(
+            "( v4l2src device=%s ! video/x-raw,format=YUY2,width=640,height=480,framerate=30/1 ! videoconvert ! video/x-raw,format=I420 ! "
             "queue max-size-buffers=1 leaky=downstream ! "
-            "x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 )");
+            "x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 )", device);
+
+        gst_rtsp_media_factory_set_launch(factory, launch_string);
+        g_free(launch_string);
             
         gst_rtsp_media_factory_set_shared(factory, TRUE);
         gst_rtsp_mount_points_add_factory(mounts, "/live", factory);
@@ -35,14 +38,14 @@ private:
 };
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        g_print("Usage: %s <IP_ADDRESS>\n", argv[0]);
+    if (argc != 3) {
+        g_print("Usage: %s <IP_ADDRESS> <DEVICE>\n", argv[0]);
         return -1;
     }
 
     gst_init(&argc, &argv);
 
-    RTSPServer server;
+    RTSPServer server(argv[2]);
     server.run(argv[1]);
 
     return 0;
