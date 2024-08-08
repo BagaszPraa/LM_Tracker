@@ -1,6 +1,7 @@
 # NEXT TARGET 
 1. Pick BBOX dengan live video OKE
 2. STREAM video to RTSP OKE
+3. Gabungkan program RTSP server dan Tracking
 3. receive video RTSP dan Pick ROI/BBOX dengan GCS
 4. Kirim Data ROI/BBOX via ethernet
 
