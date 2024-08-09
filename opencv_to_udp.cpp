@@ -17,9 +17,9 @@ int main(int argc, char *argv[]) {
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
 
-    // Membuat pipeline GStreamer untuk RTSP streaming
+    // Membuat pipeline GStreamer
     GstElement *pipeline = gst_parse_launch(
-        "appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 ! rtspclientsink location=rtsp://192.168.168.16:5000/live", NULL);
+        "appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 ! udpsink host=192.168.168.97 port=5000", NULL);
     GstElement *appsrc = gst_bin_get_by_name(GST_BIN(pipeline), "mysrc");
 
     // Tentukan format video yang akan dikirimkan ke GStreamer

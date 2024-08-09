@@ -10,14 +10,14 @@ public:
 
         GstRTSPMountPoints *mounts = gst_rtsp_server_get_mount_points(server);
         GstRTSPMediaFactory *factory = gst_rtsp_media_factory_new();
-        gchar *launch_string = g_strdup_printf(
-            "( v4l2src device= /dev/video2 ! video/x-raw,format=YUY2,width=640,height=480,framerate=30/1 ! videoconvert ! video/x-raw,format=I420 ! "
-            "queue max-size-buffers=1 leaky=downstream ! "
-            "x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 )");
-        // gst_rtsp_media_factory_set_launch(factory,
-        //     "( appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 )");
-        gst_rtsp_media_factory_set_launch(factory, launch_string);
-        g_free(launch_string);
+        // gchar *launch_string = g_strdup_printf(
+        //     "( appsrc name=mysrc ! video/x-raw,format=YUY2,width=640,height=480,framerate=30/1 ! videoconvert ! video/x-raw,format=I420 ! "
+        //     "queue max-size-buffers=1 leaky=downstream ! "
+        //     "x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 )");
+        gst_rtsp_media_factory_set_launch(factory,
+            "( appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 )");
+        // gst_rtsp_media_factory_set_launch(factory, launch_string);
+        // g_free(launch_string);
         gst_rtsp_media_factory_set_shared(factory, TRUE);
         gst_rtsp_mount_points_add_factory(mounts, "/live", factory);
 
