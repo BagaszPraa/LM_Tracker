@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Usage: " << argv[0] << " <IP_ADDRESS>" << std::endl;
         return -1;
     }
+    roi = cv::Rect(320,160,fixed_width,fixed_height);////////////////////////////////////////////////////////
 
     std::string ip_address = argv[1];
 
