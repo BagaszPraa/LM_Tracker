@@ -9,8 +9,10 @@ cv::Rect roi;
 bool selecting = false;
 bool initialized = false;
 cv::Rect roipick;
-int fixed_width = 100;
-int fixed_height = 100;
+int fixed_width = 50;
+int fixed_height = 50;
+int width = 640;
+int height = 320;
 
 void select_roi(int event, int x, int y, int, void*) {
     if (event == cv::EVENT_LBUTTONDOWN) {
@@ -26,6 +28,13 @@ void select_roi(int event, int x, int y, int, void*) {
 }
 
 int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <IP_ADDRESS>" << std::endl;
+        return -1;
+    }
+
+    std::string ip_address = argv[1];
+
     gst_init(&argc, &argv);
     cv::Ptr<cv::Tracker> tracker = cv::TrackerCSRT::create();
     cv::VideoCapture cap("/dev/video2");
@@ -33,30 +42,36 @@ int main(int argc, char *argv[]) {
         std::cerr << "Error: Could not open camera." << std::endl;
         return -1;
     }
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+    cap.set(cv::CAP_PROP_FRAME_WIDTH, width);
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT, height);
     cv::namedWindow("Frame");  
     cv::setMouseCallback("Frame", select_roi);
-    GstElement *pipeline = gst_parse_launch(
-        "appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 ! udpsink host=192.168.168.97 port=5000", NULL);
+
+    // Membuat pipeline GStreamer dengan alamat IP dinamis
+    std::string pipeline_str = "appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 ! udpsink host=" + ip_address + " port=5000";
+    GstElement *pipeline = gst_parse_launch(pipeline_str.c_str(), NULL);
     GstElement *appsrc = gst_bin_get_by_name(GST_BIN(pipeline), "mysrc");
+
     GstCaps *caps = gst_caps_new_simple("video/x-raw",
                                         "format", G_TYPE_STRING, "BGR",
-                                        "width", G_TYPE_INT, 640,
-                                        "height", G_TYPE_INT, 480,
+                                        "width", G_TYPE_INT, width,
+                                        "height", G_TYPE_INT, height,
                                         "framerate", GST_TYPE_FRACTION, 30, 1,
                                         NULL);
     gst_app_src_set_caps(GST_APP_SRC(appsrc), caps);
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
+
     cv::Mat frame;
     int frame_count = 0;
     double fps = 0.0;
     auto start_time = std::chrono::steady_clock::now();
+
     while (true) {
         cap >> frame; // Ambil frame dari kamera
         if (frame.empty()) {
             break;
         }
+
         frame_count++;
         auto current_time = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_seconds = current_time - start_time;
@@ -66,13 +81,16 @@ int main(int argc, char *argv[]) {
             frame_count = 0;
             start_time = current_time;
         }
+
         if (selecting) {
             cv::rectangle(frame, roipick, cv::Scalar(255, 0, 0), 2);
         }
+
         if (!roi.empty() && !initialized) {
             tracker->init(frame, roi);
             initialized = true;
         }
+
         if (initialized) {
             cv::Rect bbox;
             bool ok = tracker->update(frame, bbox);
@@ -88,20 +106,29 @@ int main(int argc, char *argv[]) {
                 initialized = false;
                 roi = cv::Rect();
                 std::cout << "FPS " << fps << " Target: Missing" << std::endl;
-                cv::putText(frame, "Tracking gagal", cv::Point(100, 80), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 255), 2);
             }
         }
+
         GstBuffer *buffer = gst_buffer_new_allocate(NULL, frame.total() * frame.elemSize(), NULL);
         gst_buffer_fill(buffer, 0, frame.data, frame.total() * frame.elemSize());
         GstFlowReturn ret;
         g_signal_emit_by_name(appsrc, "push-buffer", buffer, &ret);
         gst_buffer_unref(buffer);
-        cv::imshow("Frame", frame);
+
+        // cv::imshow("Frame", frame);
         int key = cv::waitKey(1) & 0xFF;
+        
         if (key == 27) {  // Tekan ESC untuk keluar
             break;
         }
+        else if (key == 'r') {  // Tekan 'r' untuk reset ROI
+            initialized = false;
+            roi = cv::Rect2d();
+            selecting = false;
+            std::cout << "ROI reset." << std::endl;
+        }
     }
+
     gst_element_send_event(pipeline, gst_event_new_eos());
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(pipeline);

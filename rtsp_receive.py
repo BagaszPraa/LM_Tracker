@@ -1,8 +1,8 @@
 import cv2
 
 # Buka stream menggunakan OpenCV
-cap = cv2.VideoCapture("rtsp://192.168.168.16:5000")
-# cap =cv2.VideoCapture(0)
+# cap = cv2.VideoCapture("rtsp://192.168.168.16:5000")
+cap =cv2.VideoCapture(2)
 if not cap.isOpened():
     print("Error: Could not open stream.")
     exit()
