@@ -23,20 +23,6 @@ int height = 360;
 
 #define BUFFER_SIZE 1024
 
-void select_roi(int event, int x, int y, int, void*) {
-    if (event == cv::EVENT_LBUTTONDOWN) {
-        selecting = true;
-    }
-    else if (event == cv::EVENT_MOUSEMOVE && selecting) {
-        roipick = cv::Rect(x - roiWidth / 2, y - roiHeight / 2, roiWidth, roiHeight);
-    }
-    else if (event == cv::EVENT_LBUTTONUP) {
-        selecting = false;
-        roi = cv::Rect(x - roiWidth / 2, y - roiHeight / 2, roiWidth, roiHeight);
-        initialized = false;  // Reset tracker so it can be re-initialized
-    }
-}
-
 void processReceivedData(const std::string& data) {
     std::istringstream ss(data);
     std::string token;
@@ -56,8 +42,8 @@ void processReceivedData(const std::string& data) {
     if (values.size() == 4) {
         roi = cv::Rect(values[0], values[1], values[2], values[3]);
         initialized = false;  // Reset tracker so it can be re-initialized
-        std::cout << "Received: x=" << values[0] << ", y=" << values[1]
-                  << ", width=" << values[2] << ", height=" << values[3] << std::endl;
+        // std::cout << "Received: x=" << values[0] << ", y=" << values[1]
+        //           << ", width=" << values[2] << ", height=" << values[3] << std::endl;
     } else {
         std::cerr << "Invalid number of values received: " << values.size() << std::endl;
     }
@@ -126,13 +112,15 @@ void startServer(const std::string& ipAddress, int port) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <IP_ADDRESS>" << std::endl;
+    if (argc != 5) {
+        std::cerr << "Usage: " << argv[0] << " <VIDEO_IP_ADDRESS> <VIDEO_PORT> <TCP_IP_ADDRESS> <TCP_PORT>" << std::endl;
         return -1;
     }
-    roi = cv::Rect(320,160,roiWidth,roiHeight);
 
-    std::string ip_address = argv[1];
+    std::string video_ip_address = argv[1];
+    int video_port = std::stoi(argv[2]);
+    std::string tcp_ip_address = argv[3];
+    int tcp_port = std::stoi(argv[4]);
 
     gst_init(&argc, &argv);
     cv::Ptr<cv::Tracker> tracker = cv::TrackerCSRT::create();
@@ -143,11 +131,9 @@ int main(int argc, char *argv[]) {
     }
     cap.set(cv::CAP_PROP_FRAME_WIDTH, width);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, height);
-    cv::namedWindow("Frame");  
-    cv::setMouseCallback("Frame", select_roi);
 
-    // Membuat pipeline GStreamer dengan alamat IP dinamis
-    std::string pipeline_str = "appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 ! udpsink host=" + ip_address + " port=5000";
+    // Membuat pipeline GStreamer dengan alamat IP dan port dinamis
+    std::string pipeline_str = "appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 ! udpsink host=" + video_ip_address + " port=" + std::to_string(video_port);
     GstElement *pipeline = gst_parse_launch(pipeline_str.c_str(), NULL);
     GstElement *appsrc = gst_bin_get_by_name(GST_BIN(pipeline), "mysrc");
 
@@ -161,14 +147,14 @@ int main(int argc, char *argv[]) {
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
     // Start the TCP server on a separate thread
-    std::thread server_thread(startServer, ip_address, 6000);
+    std::thread server_thread(startServer, tcp_ip_address, tcp_port);
     server_thread.detach(); // Detach so it runs independently
 
     cv::Mat frame;
     int frame_count = 0;
     double fps = 0.0;
     auto start_time = std::chrono::steady_clock::now();
-    
+
     while (true) {
         cap >> frame; // Ambil frame dari kamera
         if (frame.empty()) {
@@ -183,10 +169,6 @@ int main(int argc, char *argv[]) {
             std::cout << "FPS = " << fps << std::endl;
             frame_count = 0;
             start_time = current_time;
-        }
-
-        if (selecting) {
-            cv::rectangle(frame, roipick, cv::Scalar(255, 0, 0), 2);
         }
 
         if (!roi.empty() && !initialized) {
@@ -217,19 +199,6 @@ int main(int argc, char *argv[]) {
         GstFlowReturn ret;
         g_signal_emit_by_name(appsrc, "push-buffer", buffer, &ret);
         gst_buffer_unref(buffer);
-
-        // cv::imshow("Frame", frame);
-        int key = cv::waitKey(1) & 0xFF;
-        
-        if (key == 27) {  // Tekan ESC untuk keluar
-            break;
-        }
-        else if (key == 'r') {  // Tekan 'r' untuk reset ROI
-            initialized = false;
-            roi = cv::Rect2d();
-            selecting = false;
-            std::cout << "ROI reset." << std::endl;
-        }
     }
 
     gst_element_send_event(pipeline, gst_event_new_eos());
