@@ -2,8 +2,9 @@
 1. Pick BBOX dengan live video OKE
 2. STREAM video to RTSP OKE
 3. Gabungkan program UDPstream dan Tracking OKE
-3. receive video RTSP dan Pick ROI/BBOX dengan GCS
-4. Kirim Data ROI/BBOX via ethernet
+3. receive video RTSP/UDP dan Pick ROI/BBOX dengan GCS OKEE
+4. Kirim Data ROI/BBOX via ethernet OKEE
+6. Gabungkan program tracking dan roireceiver
 
 ## Compile cpp
 ```shell
