@@ -12,7 +12,7 @@ cv::Rect roipick;
 int fixed_width = 50;
 int fixed_height = 50;
 int width = 640;
-int height = 320;
+int height = 360;
 
 void select_roi(int event, int x, int y, int, void*) {
     if (event == cv::EVENT_LBUTTONDOWN) {
