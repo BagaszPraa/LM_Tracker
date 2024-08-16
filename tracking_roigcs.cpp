@@ -180,13 +180,13 @@ int main(int argc, char *argv[]) {
             cv::Rect bbox;
             bool ok = tracker->update(frame, bbox);
             if (ok) {
-                cv::rectangle(frame, bbox, cv::Scalar(0, 255, 0), 2, 1);
+                cv::rectangle(frame, bbox, cv::Scalar(0, 255, 0),1);
                 int center_x = static_cast<int>(bbox.x + bbox.width / 2);
                 int center_y = static_cast<int>(bbox.y + bbox.height / 2);
                 std::cout << "FPS " << fps << " Target: (" << center_x << ", " << center_y << ")" << std::endl;
                 cv::circle(frame, cv::Point(center_x, center_y), 5, cv::Scalar(0, 0, 255), -1);
-                cv::line(frame, cv::Point(center_x, 0), cv::Point(center_x, frame.rows), cv::Scalar(0, 0, 255), 2);  // Vertical line
-                cv::line(frame, cv::Point(0, center_y), cv::Point(frame.cols, center_y), cv::Scalar(0, 0, 255), 2);  // Horizontal line
+                cv::line(frame, cv::Point(center_x, 0), cv::Point(center_x, frame.rows), cv::Scalar(0, 0, 255), 1);  // Vertical line
+                cv::line(frame, cv::Point(0, center_y), cv::Point(frame.cols, center_y), cv::Scalar(0, 0, 255), 1);  // Horizontal line
             } else {
                 initialized = false;
                 roi = cv::Rect();
