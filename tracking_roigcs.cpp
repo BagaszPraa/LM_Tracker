@@ -15,11 +15,8 @@
 cv::Rect roi;
 bool selecting = false;
 bool initialized = false;
-cv::Rect roipick;
-int roiWidth = 50;
-int roiHeight = 50;
-int width = 640;
-int height = 360;
+int width = 320;
+int height = 180;
 
 #define BUFFER_SIZE 1024
 
@@ -124,7 +121,7 @@ int main(int argc, char *argv[]) {
 
     gst_init(&argc, &argv);
     cv::Ptr<cv::Tracker> tracker = cv::TrackerCSRT::create();
-    cv::VideoCapture cap("/dev/video2");
+    cv::VideoCapture cap("/dev/video0");
     if (!cap.isOpened()) {
         std::cerr << "Error: Could not open camera." << std::endl;
         return -1;
@@ -184,7 +181,7 @@ int main(int argc, char *argv[]) {
                 int center_x = static_cast<int>(bbox.x + bbox.width / 2);
                 int center_y = static_cast<int>(bbox.y + bbox.height / 2);
                 std::cout << "FPS " << fps << " Target: (" << center_x << ", " << center_y << ")" << std::endl;
-                cv::circle(frame, cv::Point(center_x, center_y), 5, cv::Scalar(0, 0, 255), -1);
+                // cv::circle(frame, cv::Point(center_x, center_y), 5, cv::Scalar(0, 0, 255), -1);
                 cv::line(frame, cv::Point(center_x, 0), cv::Point(center_x, frame.rows), cv::Scalar(0, 0, 255), 1);  // Vertical line
                 cv::line(frame, cv::Point(0, center_y), cv::Point(frame.cols, center_y), cv::Scalar(0, 0, 255), 1);  // Horizontal line
             } else {
