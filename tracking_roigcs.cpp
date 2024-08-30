@@ -121,7 +121,8 @@ int main(int argc, char *argv[]) {
 
     gst_init(&argc, &argv);
     cv::Ptr<cv::Tracker> tracker = cv::TrackerCSRT::create();
-    cv::VideoCapture cap("/dev/video0");
+    // cv::VideoCapture cap("/home/bagas/Videos/FPV.mp4");
+    cv::VideoCapture cap("/dev/video3");
     if (!cap.isOpened()) {
         std::cerr << "Error: Could not open camera." << std::endl;
         return -1;
@@ -130,7 +131,8 @@ int main(int argc, char *argv[]) {
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, height);
 
     // Membuat pipeline GStreamer dengan alamat IP dan port dinamis
-    std::string pipeline_str = "appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtph264pay config-interval=1 name=pay0 pt=96 ! udpsink host=" + video_ip_address + " port=" + std::to_string(video_port);
+    std::string pipeline_str = "appsrc name=mysrc ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay config-interval=1 pt=96 ! udpsink host=" + video_ip_address + " port=" + std::to_string(video_port);
+    // std::string pipeline_str = "appsrc name=mysrc ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay config-interval=1 name=pay0 pt=96 ! udpsink host=" + video_ip_address + " port=" + std::to_string(video_port);
     GstElement *pipeline = gst_parse_launch(pipeline_str.c_str(), NULL);
     GstElement *appsrc = gst_bin_get_by_name(GST_BIN(pipeline), "mysrc");
 

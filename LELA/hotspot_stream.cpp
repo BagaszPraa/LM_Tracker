@@ -35,7 +35,8 @@ int main(int argc, char* argv[]) {
     string ip_address = argv[3];          // Alamat IP target dari argumen ketiga
     int port = stoi(argv[4]);             // Port target dari argumen keempat
 
-    VideoCapture cap("/dev/video0");
+    VideoCapture cap("/dev/video3");
+    // cv::VideoCapture cap("/home/bagas/Videos/FPV.mp4");
     if (!cap.isOpened()) {
         cout << "Gagal membuka kamera." << endl;
         return -1;
