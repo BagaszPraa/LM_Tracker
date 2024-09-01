@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
     int port = stoi(argv[2]);             // Port target dari argumen keempat
     string tcp_ip_address = argv[3];
     int tcp_port = stoi(argv[4]);
-    VideoCapture cap("/home/bagas/Videos/FPV.mp4");
+    VideoCapture cap("/home/bagas/Videos/plane.mp4");
     // VideoCapture cap("/dev/video3");
     Ptr<Tracker> tracker = TrackerCSRT::create();
     if (!cap.isOpened()) {
